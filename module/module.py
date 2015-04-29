@@ -43,8 +43,8 @@ try:
     from pymongo import ReplicaSetConnection, ReadPreference
 except ImportError:
     ReplicaSetConnection = None
-    ReadPreference = None	
-	
+    ReadPreference = None
+
 from shinken.basemodule import BaseModule
 from shinken.log import logger
 
@@ -66,7 +66,7 @@ def get_instance(plugin):
     username = getattr(plugin, 'username', '')
     password = getattr(plugin, 'password', '')
     replica_set = getattr(plugin, 'replica_set', '')
-    
+
     instance = Mongodb_generic(plugin, uri, database, username, password, replica_set)
     return instance
 
@@ -86,8 +86,8 @@ class Mongodb_generic(BaseModule):
                          'replica_set because your pymongo lib is too old. '
                          'Please install it with a 2.x+ version from '
                          'https://github.com/mongodb/mongo-python-driver/downloads')
-            return None		
-        
+            return None
+
         # Some used variable init
         self.con = None
         self.db = None
@@ -106,7 +106,7 @@ class Mongodb_generic(BaseModule):
                 else:
                     self.con = Connection(self.uri)
             # END
-			
+
             self.db = getattr(self.con, self.database)
             if self.username != '' and self.password != '':
                 self.db.authenticate(self.username, self.password)
@@ -125,7 +125,16 @@ class Mongodb_generic(BaseModule):
 
         r = {}
 
-        tables = ['hosts', 'services', 'contacts', 'commands', 'timeperiods']
+        tables = ['hosts',
+                  'services',
+                  'contacts',
+                  'commands',
+                  'timeperiods'
+                  'contactgroups',
+                  'hostgroups',
+                  'servicegroups',
+                  'realms',
+                  'timeperiods']
         for t in tables:
             r[t] = []
 
@@ -145,7 +154,7 @@ class Mongodb_generic(BaseModule):
     def get_uniq_id(self, t, i):
         #by default we will return a very uniq id
         u = str(int(uuid.uuid4().int))
-        
+
         is_tpl = (getattr(i, 'register', '1')  == '0')
         if is_tpl:
             return 'tpl-%s' % getattr(i, 'name', u)
@@ -165,7 +174,7 @@ class Mongodb_generic(BaseModule):
 
         print "Unknown TYPE in migration!"
         return u
-            
+
 
 
     # Function called by the arbiter so we import the objects in our databases
@@ -179,7 +188,7 @@ class Mongodb_generic(BaseModule):
             logger.error("Your python version is too old. Please update to a 2.6 version to use this feature")
             return False
 
-        
+
         for t in data:
             col = getattr(self.db, t)
             print "Saving objects %s" % t
@@ -188,10 +197,10 @@ class Mongodb_generic(BaseModule):
                 print "Element", e
                 e['_id'] = self.get_uniq_id(t, e)
                 col.save(e)
-            
+
 
         return True
-        
+
 
 
 #################################### WebUI parts ############################
@@ -212,10 +221,10 @@ class Mongodb_generic(BaseModule):
             return None
 
         return e.get(key)
-        
+
     # We will get in the mongodb database the user preference entry, and get the key
     # they are asking us
-    
+
     def get_ui_user_preference(self, user, key):
         if not self.db:
             print "[Mongodb]: error Problem during init phase"
